@@ -39,7 +39,9 @@ import os
 bucket_name = 'emp_png'
 client = storage.Client.from_service_account_json("cloudkarya-internship-415b6b4ef0ff.json")  
 bucket = client.get_bucket(bucket_name)
-
+bigquery_client = bigquery.Client.from_service_account_json(client)
+storage_client = storage.Client.from_service_account_json(client)
+project_id = "cloudkarya-internship"
 
 def extract(request: Request):
     download_blob(bucket_name, source_file_name, dest_filename)
@@ -246,7 +248,17 @@ def recognize_faces(frames):
         html_table += "</table>"   
     return html_table   
    
-  
+@app.post("/getdata")
+async def get_data(request: Request,date:Annotated[str,Form(...)]):
+   query = f"""
+         SELECT  * FROM {project_id}.eams.ImageDataTable
+         WHERE name = '{name}',
+         date ='{date}';
+   """
+    df = bigquery_client.query(query).to_dataframe()
+    print(df.head())
+    # image_path=df.iloc[0]['img_file']
+    predi1=df.iloc[0]['pneumonia_prob']
 
 # def process_attendance_data(attendance_dict):
 #     # Convert the att endance dictionary to a DataFrame
