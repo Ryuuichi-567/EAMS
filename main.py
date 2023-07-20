@@ -83,8 +83,6 @@ async def upload_video(request : Request, video_file: UploadFile = File(...)):
     with open(video_path,"wb") as f:
         f.write(await video_file.read())
  
-
-
     a=extract_frames(video_path)   
     b=recognize_faces(a)
     #c=process_attendance_data(b)
@@ -94,13 +92,6 @@ async def upload_video(request : Request, video_file: UploadFile = File(...)):
         "b": b
     }
     return templates.TemplateResponse("index.html",context)
-
-
-   
-
-
-
-   
 
 
 # def download_blob(bucket_name, source_file_name, dest_filename,storage_client):
@@ -153,7 +144,6 @@ from tempfile import TemporaryFile
 #         file_name = event['name']
 
 #     print(f"Processing file: {file_name}.")
-
 
 #     storage_client = storage.Client()
 
@@ -219,18 +209,22 @@ def recognize_faces(frames):
 
             # Find the best match
             if len(matches) > 0:
-                face_distances = face_recognition.face_distance(known_faces, face_encoding)
-                best_match_index = np.argmin(face_distances)
-                if matches[best_match_index]:
-                    name = known_names[best_match_index]
+              face_distances = face_recognition.face_distance(known_faces, face_encoding)
+              best_match_index = np.argmin(face_distances)
+              if matches[best_match_index]:
+                  name = known_names[best_match_index]
+                  # Update attendance dictionary with name and timestamp
+                  # attendance_dict[name] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                    # Update attendance dictionary with name and timestamp
-                    attendance_dict[name] = datetime.now().strftime("%Y-%B-%Y %H:%M:%S")
-
-                # Draw a box around the face and label the name
-                top, right, bottom, left = face_location
-                cv2.rectangle(resized_frame, (left, top), (right, bottom), (0, 255, 0), 2)
-                cv2.putText(resized_frame, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+              # Draw a box around the face and label the name
+              if face_locations:
+                timestamp = cap.get(round(cv2.CAP_PROP_POS_MSEC,2)) / 1000.0
+                adjusted_timestamp = video_created_time + datetime.timedelta(seconds=timestamp)
+                attendance_dict[name] = adjusted_timestamp.strftime("%Y-%B-%d %H:%M:%S")
+              top, right, bottom, left = face_location
+              cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+              cv2.putText(frame, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+              cv2.putText(frame, str(adjusted_timestamp.strftime("%Y-%B-%d %H:%M:%S")), (left, bottom + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
  
         # Save the resulting frame as an image
         output_path = f'results/frame_{i}.jpg'
@@ -248,13 +242,13 @@ def recognize_faces(frames):
         html_table += "</table>"   
     return html_table     
    
-# @app.post("/getdata") 
-# async def get_data(request: Request,date:Annotated[str,Form(...)]):
-#    query = f"""
-#          SELECT  * FROM {project_id}.eams1.ImageDataTable
-#          WHERE name = '{name}',
-#          date ='{date}';
-#    """
+@app.post("/getdata") 
+async def get_data(request: Request,date:Annotated[str,Form(...)]):
+   query = f"""
+         SELECT  * FROM {project_id}.eams1.ImageDataTable
+         WHERE name = '{name}',
+         date ='{date}';
+   """
 #     df = bigquery_client.query(query).to_dataframe()
 #     print(df.head())
 #     # image_path=df.iloc[0]['img_file']
@@ -278,6 +272,19 @@ def recognize_faces(frames):
 #     df.to_csv(output_file, index=True)
 #     return output_file
 
+# if len(matches) > 0:
+#                 face_distances = face_recognition.face_distance(known_faces, face_encoding)
+#                 best_match_index = np.argmin(face_distances)
+#                 if matches[best_match_index]:
+#                     name = known_names[best_match_index]
+
+#                     # Update attendance dictionary with name and timestamp
+#                     attendance_dict[name] = datetime.now().strftime("%Y-%B-%Y %H:%M:%S")
+
+#                 # Draw a box around the face and label the name
+#                 top, right, bottom, left = face_location
+#                 cv2.rectangle(resized_frame, (left, top), (right, bottom), (0, 255, 0), 2)
+#                 cv2.putText(resized_frame, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
 
 
