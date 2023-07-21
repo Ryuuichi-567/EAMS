@@ -1,9 +1,7 @@
-from fastapi import FastAPI, UploadFile, File, Request,Form
+from fastapi import FastAPI, UploadFile, File, Request,Form, Query
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import base64
-from fastapi import FastAPI, UploadFile, File
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Annotated
 from datetime import date, datetime
@@ -15,7 +13,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from google.cloud import storage
 import cv2
-
 
 import tensorflow as tf
 from tensorflow import keras
@@ -77,11 +74,11 @@ def lis( request : Request):
     context = {"request": request, "images": images}
     return templates.TemplateResponse("index.html", context)    
 
-@app.post("/upload_video", response_class=HTMLResponse)
-async def upload_video(request : Request, video_file: UploadFile = File(...)):
-    video_path = f"videos/{video_file.filename}"
-    with open(video_path,"wb") as f:
-        f.write(await video_file.read())
+# @app.post("/upload_video", response_class=HTMLResponse)
+# async def upload_video(request : Request, video_file: UploadFile = File(...)):
+#     video_path = f"videos/{video_file.filename}"
+#     with open(video_path,"wb") as f:
+#         f.write(await video_file.read())
  
     a=extract_frames(video_path)   
     b=recognize_faces(a)
@@ -171,7 +168,6 @@ from tempfile import TemporaryFile
 # process_file()
 
 
-
 def recognize_faces(frames):
     attendance_dict = {}  # Dictionary to store attendance data
 
@@ -244,11 +240,18 @@ def recognize_faces(frames):
    
 @app.post("/getdata") 
 async def get_data(request: Request,date:Annotated[str,Form(...)]):
-   query = f"""
+    global project_id
+    query = f"""
          SELECT  * FROM {project_id}.eams1.ImageDataTable
-         WHERE name = '{name}',
-         date ='{date}';
-   """
+         WHERE date ='{date}';"""
+    df = bigquery_client.query(query).to_dataframe()
+    print(df.head())
+    Name=df.iloc[0]['Name']
+    Date=df.iloc[0]['Date']
+    Time=df.iloc[0]['Time']
+    EntryExit=df.iloc[0]['EntryExit']
+    context = {"Name": Name, "Date": Date, "Time": Time, "EntryExit": EntryExit}
+    return context
 #     df = bigquery_client.query(query).to_dataframe()
 #     print(df.head())
 #     # image_path=df.iloc[0]['img_file']
