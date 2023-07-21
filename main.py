@@ -232,7 +232,7 @@ def recognize_faces(frames):
             html_table += f"<tr><td>{name}</td><td>{date_str}</td><td>{time_str}</td></tr>\n"
   
         html_table += "</table>"   
-    return html_table     
+    return html_table      
    
 @app.get("/action_page") 
 async def get_data(request: Request, choose_date : str):
@@ -242,7 +242,7 @@ async def get_data(request: Request, choose_date : str):
          WHERE date ='{choose_date}';"""
     df = bigquery_client.query(query).to_dataframe()
     df = df.to_dict(orient='records')
-    return templates.TemplateResponse('table_html.html', context={"request": request ,"attendance_df" : df})
+    return templates.TemplateResponse('index.html', context={"request": request ,"attendance_df" : df, "chosen_date" : choose_date})
 #     df = bigquery_client.query(query).to_dataframe()
 #     print(df.head())
 #     # image_path=df.iloc[0]['img_file']
