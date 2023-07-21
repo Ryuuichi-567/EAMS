@@ -9,7 +9,6 @@ import json
 import cv2
 import face_recognition
 import os
-import numpy as np
 from matplotlib import pyplot as plt
 from google.cloud import storage
 import cv2
@@ -23,13 +22,10 @@ import pandas as pd
 import pickle
 # import matplotlib.pyplot as plt
 from code import download_blob
-import json
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
 from fastapi.responses import HTMLResponse
-import pandas as pd
-import os
 
 
 
@@ -238,20 +234,15 @@ def recognize_faces(frames):
         html_table += "</table>"   
     return html_table     
    
-@app.post("/getdata") 
-async def get_data(request: Request,date:Annotated[str,Form(...)]):
+@app.get("/action_page") 
+async def get_data(request: Request, choose_date : str):
     global project_id
     query = f"""
          SELECT  * FROM {project_id}.eams1.ImageDataTable
-         WHERE date ='{date}';"""
+         WHERE date ='{choose_date}';"""
     df = bigquery_client.query(query).to_dataframe()
-    print(df.head())
-    Name=df.iloc[0]['Name']
-    Date=df.iloc[0]['Date']
-    Time=df.iloc[0]['Time']
-    EntryExit=df.iloc[0]['EntryExit']
-    context = {"Name": Name, "Date": Date, "Time": Time, "EntryExit": EntryExit}
-    return context
+    df = df.to_dict(orient='records')
+    return templates.TemplateResponse('table_html.html', context={"request": request ,"attendance_df" : df})
 #     df = bigquery_client.query(query).to_dataframe()
 #     print(df.head())
 #     # image_path=df.iloc[0]['img_file']
